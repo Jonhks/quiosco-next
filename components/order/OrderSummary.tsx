@@ -4,6 +4,8 @@ import ProductDetails from "./ProductDetails";
 import { useMemo } from "react";
 import { formatCurrency } from "@/src/utils";
 import { createOrder } from "@/actions/create-order-actions";
+import { OrderSchema } from "@/src/schema";
+import { toast } from "react-toastify";
 
 const OrderSummary = () => {
   const order = useStore((state) => state.order);
@@ -12,8 +14,29 @@ const OrderSummary = () => {
     [order]
   );
 
-  const handleCreateOrder = () => {
-    createOrder();
+  const handleCreateOrder = async (formData: FormData) => {
+    console.log(formData);
+
+    const data = {
+      name: formData.get("name"),
+      total,
+      order,
+    };
+    const result = OrderSchema.safeParse(data);
+    if (!result.success) {
+      result.error.errors.forEach((error) => {
+        toast.error(error.message);
+      });
+      return;
+    }
+    const response = await createOrder(data);
+    console.log(response);
+    if (response?.errors) {
+      response.errors.forEach((error) => {
+        toast.error(error.message);
+      });
+      return;
+    }
   };
 
   return (
@@ -37,6 +60,12 @@ const OrderSummary = () => {
             className=" w-full mt-10 space-y-5"
             action={handleCreateOrder}
           >
+            <input
+              type="text"
+              placeholder="Tu nombre"
+              className=" bg-white border border-gray-300 p-2 w-full"
+              name="name"
+            />
             <input
               type="submit"
               className="py-2 rounded uppercase text-white bg-black w-full text-center cursor-pointer font-bold "
